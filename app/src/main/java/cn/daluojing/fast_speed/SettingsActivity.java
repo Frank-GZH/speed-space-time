@@ -5,6 +5,7 @@ import android.net.TrafficStats;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.widget.Toast;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,7 +26,7 @@ import fr.bmartel.speedtest.model.SpeedTestError;
 
 public class SettingsActivity extends AppCompatActivity {
 
-    private ScheduledExecutorService executorService = Executors.newScheduledThreadPool(2);
+    private static ScheduledExecutorService executorService = Executors.newScheduledThreadPool(2);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,19 +42,10 @@ public class SettingsActivity extends AppCompatActivity {
             actionBar.setTitle("飞速时空");
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
-        SwitchPreferenceCompat sWork = settingsFragment.getSwitchWork();
-        EditTextPreference sInfo = settingsFragment.getSpeedInfo();
-        ListPreference sSuccess = settingsFragment.getSwitchSuccess();
-        SwitchPreferenceCompat sSsr = settingsFragment.getSwitchWork();
 
-        InfoShow showThread = new InfoShow(sInfo);
-        CheckWorkSwitch workThread = new CheckWorkSwitch(sWork);
-
-        executorService.scheduleAtFixedRate(workThread, 500, 1000, TimeUnit.MILLISECONDS);
-//        executorService.scheduleAtFixedRate(showThread, 1000, 1000, TimeUnit.MILLISECONDS);
     }
 
-    class InfoShow implements Runnable{
+    static class InfoShow implements Runnable{
         private final static String SPEED_TEST_SERVER_URI_DL = "http://ipv4.ikoula.testdebit.info/10M.iso";
         private static final int SPEED_TEST_DURATION = 3000;
         private static final int REPORT_INTERVAL = 1000;
@@ -99,7 +91,7 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
-    class CheckWorkSwitch implements Runnable{
+    static class CheckWorkSwitch implements Runnable{
         SwitchPreferenceCompat sWork;
 
         public CheckWorkSwitch(SwitchPreferenceCompat sWork){
@@ -145,14 +137,38 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     public static class SettingsFragment extends PreferenceFragmentCompat {
+        private EditTextPreference speedInfo;
+        private ListPreference switchSuccess;
+        private SwitchPreferenceCompat switchWork;
+        private SwitchPreferenceCompat switchSSr;
+
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             setPreferencesFromResource(R.xml.root_preferences, rootKey);
+
+            speedInfo = findPreference("time_speed");
+            switchSuccess = findPreference("is_success");
+            switchWork = findPreference("start_work");
+            switchSSr = findPreference("connect_ssr");
+
+//            SwitchPreferenceCompat sWork = settingsFragment.getSwitchWork();
+//            EditTextPreference sInfo = settingsFragment.getSpeedInfo();
+//            ListPreference sSuccess = settingsFragment.getSwitchSuccess();
+//            SwitchPreferenceCompat sSsr = settingsFragment.getSwitchWork();
+            InfoShow showThread = new InfoShow(speedInfo);
+            CheckWorkSwitch workThread = new CheckWorkSwitch(switchWork);
+
+            executorService.scheduleAtFixedRate(workThread, 500, 1000, TimeUnit.MILLISECONDS);
+            executorService.scheduleAtFixedRate(showThread, 1000, 1000, TimeUnit.MILLISECONDS);
+
+            if( switchWork.isChecked() ){
+//                Toast.makeText(getApplicationContext(), "检查是否成功.", Toast.LENGTH_LONG);
+                System.out.println("savedInstanceState = " + savedInstanceState + ", rootKey111 = " + rootKey);
+            }else{
+                System.out.println("savedInstanceState = " + savedInstanceState + ", rootKey222 = " + rootKey);
+            }
         }
-        EditTextPreference speedInfo = findPreference("time_speed");
-        ListPreference switchSuccess = findPreference("is_success");
-        SwitchPreferenceCompat switchWork = findPreference("start_work");
-        SwitchPreferenceCompat switchSSr = findPreference("connect_ssr");
+
 
 
         public SwitchPreferenceCompat getSwitchWork() {
